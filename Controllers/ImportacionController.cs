@@ -1,5 +1,4 @@
-﻿using importacionmasiva.api.net.DataBase;
-using importacionmasiva.api.net.Models;
+﻿using importacionmasiva.api.net.Models;
 using importacionmasiva.api.net.Services.Interface;
 using importacionmasiva.api.net.Utils.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +17,7 @@ namespace importacionmasiva.api.net.Controllers
             _importacionService = importacionService;
         }
 
-        [HttpPost("/api/{tableName}/importacion/{registryName}/")]
+        [HttpPost("/api/xlsx/{tableName}/importacion/{registryName}/")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> ImportFromExcel([FromForm, Required] List<IFormFile> dataset, string registryName, string tableName) 
         {
@@ -34,7 +33,25 @@ namespace importacionmasiva.api.net.Controllers
 
                 return StatusCode(response.status, response);
             }
-            
         }
+
+        [HttpPost("/api/txt/{tableName}/importacion/{registryName}/")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ImportFromTxt([FromForm, Required] List<IFormFile> dataset, string registryName, string tableName)
+        {
+            try
+            {
+                await _importacionService.ImportFromTxt(dataset.FirstOrDefault(), registryName, tableName);
+
+                return Ok(new Response(200, false, "Se realizó la importación correctamente."));
+            }
+            catch (CustomException ex)
+            {
+                var response = new Response(ex?.Code ?? 500, true, ex?.Message ?? "Hubo un error no controlado.");
+
+                return StatusCode(response.status, response);
+            }
+        }
+
     }
 }
