@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Net;
-using System.Reflection;
 using System.Text;
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
