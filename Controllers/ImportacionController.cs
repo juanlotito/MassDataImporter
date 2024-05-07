@@ -1,4 +1,5 @@
 ﻿using importacionmasiva.api.net.Models;
+using importacionmasiva.api.net.Models.Enum;
 using importacionmasiva.api.net.Services.Interface;
 using importacionmasiva.api.net.Utils.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace importacionmasiva.api.net.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     public class ImportacionController : ControllerBase
     {
@@ -19,11 +19,11 @@ namespace importacionmasiva.api.net.Controllers
 
         [HttpPost("/api/xlsx/{tableName}/importacion/{registryName}/")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ImportFromExcel([FromForm, Required] List<IFormFile> dataset, string registryName, string tableName) 
+        public async Task<IActionResult> ImportFromExcel([FromForm, Required] List<IFormFile> dataset, string registryName, string tableName, [FromQuery] DeleteAction deleteAction = DeleteAction.None) 
         {
             try 
             {
-                await _importacionService.ImportFromExcel(dataset.FirstOrDefault(), registryName, tableName);
+                await _importacionService.ImportFromExcel(dataset.FirstOrDefault(), registryName, tableName, deleteAction);
 
                 return Ok(new Response(200, false, "Se realizó la importación correctamente."));
             }
@@ -37,11 +37,11 @@ namespace importacionmasiva.api.net.Controllers
 
         [HttpPost("/api/txt/{tableName}/importacion/{registryName}/")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ImportFromTxt([FromForm, Required] List<IFormFile> dataset, string registryName, string tableName)
+        public async Task<IActionResult> ImportFromTxt([FromForm, Required] List<IFormFile> dataset, string registryName, string tableName, [FromQuery] DeleteAction deleteAction = DeleteAction.None)
         {
             try
             {
-                await _importacionService.ImportFromTxt(dataset.FirstOrDefault(), registryName, tableName);
+                await _importacionService.ImportFromTxt(dataset.FirstOrDefault(), registryName, tableName, deleteAction);
 
                 return Ok(new Response(200, false, "Se realizó la importación correctamente."));
             }
