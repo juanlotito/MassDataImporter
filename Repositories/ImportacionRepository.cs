@@ -22,13 +22,10 @@ namespace importacionmasiva.api.net.Repositories
             try
             {
                 string query = @"SELECT CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @TableName) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
-                
-                using var dbContext = new DbContext(_connectionFactory, registryName);
+
                 using var connection = _connectionFactory.CreateConnection(registryName);
 
-                var exists = await connection.QueryFirstOrDefaultAsync<bool>(query, new { TableName = tableName });
-
-                return exists;
+                return await connection.QueryFirstOrDefaultAsync<bool>(query, new { TableName = tableName });
             }
             catch (SqlException sqlex)
             {
@@ -112,7 +109,7 @@ namespace importacionmasiva.api.net.Repositories
                 using var bulkCopy = new SqlBulkCopy(connection)
                 {
                     DestinationTableName = tableName,
-                    BatchSize = 1000,
+                    BatchSize = 100000,
                     BulkCopyTimeout = 600
                 };
 
@@ -122,6 +119,8 @@ namespace importacionmasiva.api.net.Repositories
                 }
 
                 await bulkCopy.WriteToServerAsync(dataTable);
+
+                connection.Close();
             }
             catch (SqlException sqlex)
             {
