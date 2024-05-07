@@ -1,5 +1,6 @@
 using importacionmasiva.api.net.IoC;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -56,6 +57,14 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
     options.JsonSerializerOptions.PropertyNamingPolicy = null;
 });
 
+// Configurar los límites de tamaño de la carga para las solicitudes
+builder.Services.Configure<FormOptions>(x =>
+{
+    x.ValueLengthLimit = int.MaxValue; 
+    x.MultipartBodyLengthLimit = int.MaxValue; 
+    x.MemoryBufferThreshold = Int32.MaxValue;
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins,
@@ -96,6 +105,19 @@ app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Importación Masiva API");
+});
+
+app.UseHttpsRedirection();
+
+app.UseStaticFiles();
+
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+    appBuilder.Use(async (context, next) =>
+    {
+        context.Features.Get<IHttpMaxRequestBodySizeFeature>().MaxRequestBodySize = null; // Sin límite
+        await next.Invoke();
+    });
 });
 
 app.UseRouting();
