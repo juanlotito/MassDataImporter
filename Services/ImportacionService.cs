@@ -1,4 +1,5 @@
-﻿using importacionmasiva.api.net.Repositories.Interface;
+﻿using importacionmasiva.api.net.Models.Enum;
+using importacionmasiva.api.net.Repositories.Interface;
 using importacionmasiva.api.net.Services.Interface;
 using importacionmasiva.api.net.Utils.Excel;
 using importacionmasiva.api.net.Utils.Exceptions;
@@ -18,7 +19,7 @@ namespace importacionmasiva.api.net.Services
             _importacionRepositories = importacionRepositories;
         }
 
-        public async Task ImportFromExcel(IFormFile dataset, string registryName, string tableName)
+        public async Task ImportFromExcel(IFormFile dataset, string registryName, string tableName, DeleteAction deleteAction = DeleteAction.None)
         {
             try
             {
@@ -26,6 +27,12 @@ namespace importacionmasiva.api.net.Services
 
                 if (await _importacionRepositories.TableExists(tableName, registryName))
                 {
+                    if (deleteAction == DeleteAction.Delete)
+                        await _importacionRepositories.DeleteRecords(tableName, registryName);
+
+                    else if (deleteAction == DeleteAction.Truncate)
+                        await _importacionRepositories.TruncateTable(tableName, registryName);
+
                     var tableDefinition = await _importacionRepositories.GetTableDefinition(tableName, registryName);
 
                     if (tableDefinition.Columns.Count != dataTable.Columns.Count)
@@ -51,7 +58,7 @@ namespace importacionmasiva.api.net.Services
             }
         }
 
-        public async Task ImportFromTxt(IFormFile dataset, string registryName, string tableName)
+        public async Task ImportFromTxt(IFormFile dataset, string registryName, string tableName, DeleteAction deleteAction = DeleteAction.None)
         {
             try
             {
@@ -59,6 +66,11 @@ namespace importacionmasiva.api.net.Services
 
                 if (await _importacionRepositories.TableExists(tableName, registryName))
                 {
+                    if (deleteAction == DeleteAction.Delete)
+                        await _importacionRepositories.DeleteRecords(tableName, registryName);
+                    else if (deleteAction == DeleteAction.Truncate)
+                        await _importacionRepositories.TruncateTable(tableName, registryName);
+
                     var tableDefinition = await _importacionRepositories.GetTableDefinition(tableName, registryName);
 
                     if (tableDefinition.Columns.Count != dataTable.Columns.Count)

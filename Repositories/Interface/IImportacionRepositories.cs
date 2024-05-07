@@ -9,5 +9,7 @@ namespace importacionmasiva.api.net.Repositories.Interface
         Task<bool> TableExists(string tableName, string registryName);
         Task CreateTable(DataTable dataTable, string tableName, string registryName);
         Task BulkInsert(DataTable dataTable, string tableName, string registryName);
+        Task DeleteRecords(string tableName, string registryName);
+        Task TruncateTable(string tableName, string registryName);
     }
 }

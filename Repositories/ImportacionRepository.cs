@@ -135,5 +135,51 @@ namespace importacionmasiva.api.net.Repositories
             }
         }
 
+        public async Task DeleteRecords(string tableName, string registryName)
+        {
+            try
+            {
+                string truncateQuery = $"DELETE FROM {tableName}";
+
+                using var dbContext = new DbContext(_connectionFactory, registryName);
+                using var connection = _connectionFactory.CreateConnection(registryName);
+                await connection.ExecuteAsync(truncateQuery);
+            }
+            catch (SqlException sqlex)
+            {
+                if (sqlex.Number == 4712) 
+                    throw new CustomException(422, "No se puede truncar la tabla porque tiene restricciones de clave foránea.", sqlex);
+
+                throw new CustomException(sqlex.State.ToString() == "105" ? 404 : 500, sqlex.Message, sqlex);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(500, ex.Message, ex);
+            }
+        }
+
+        public async Task TruncateTable(string tableName, string registryName)
+        {
+            try
+            {
+                string truncateQuery = $"TRUNCATE TABLE {tableName}";
+
+                using var dbContext = new DbContext(_connectionFactory, registryName);
+                using var connection = _connectionFactory.CreateConnection(registryName);
+                await connection.ExecuteAsync(truncateQuery);
+            }
+            catch (SqlException sqlex)
+            {
+                if (sqlex.Number == 4712) 
+                    throw new CustomException(422, "No se puede truncar la tabla porque tiene restricciones de clave foránea.", sqlex);
+
+                throw new CustomException(sqlex.State.ToString() == "105" ? 404 : 500, sqlex.Message, sqlex);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(500, ex.Message, ex);
+            }
+        }
+
     }
 }

@@ -2,8 +2,8 @@
 {
     public interface IImportacionService
     {
-        Task ImportFromExcel(IFormFile dataset, string registryName, string tableName);
+        Task ImportFromExcel(IFormFile dataset, string registryName, string tableName, bool deleteRecords = false);
 
-        Task ImportFromTxt(IFormFile dataset, string registryName, string tableName);
+        Task ImportFromTxt(IFormFile dataset, string registryName, string tableName, bool deleteRecords = false);
     }
 }
