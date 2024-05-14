@@ -19,13 +19,19 @@ namespace importacionmasiva.api.net.Repositories
 
         public async Task<bool> TableExists(string tableName, string registryName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(registryName))
+                throw new ArgumentException("El nombre del registro no puede estar vacío.", nameof(registryName));
+
             try
             {
                 string query = @"SELECT CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @TableName) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
 
-                using var connection = _connectionFactory.CreateConnection(registryName);
-
-                return await connection.QueryFirstOrDefaultAsync<bool>(query, new { TableName = tableName });
+                using (var connection = _connectionFactory.CreateConnection(registryName))
+                {
+                    return await connection.QueryFirstOrDefaultAsync<bool>(query, new { TableName = tableName });
+                }
             }
             catch (SqlException sqlex)
             {
@@ -42,16 +48,21 @@ namespace importacionmasiva.api.net.Repositories
 
         public async Task<TableDefinition> GetTableDefinition(string tableName, string registryName)
         {
-            try 
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(registryName))
+                throw new ArgumentException("El nombre del registro no puede estar vacío.", nameof(registryName));
+
+            try
             {
                 string query = @"SELECT COLUMN_NAME 'Name' FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @TableName ORDER BY ORDINAL_POSITION";
 
-                using var dbContext = new DbContext(_connectionFactory, registryName);
-                using var connection = _connectionFactory.CreateConnection(registryName);
+                using (var connection = _connectionFactory.CreateConnection(registryName))
+                {
+                    var columns = await connection.QueryAsync<Column>(query, new { TableName = tableName });
 
-                var columns = await connection.QueryAsync<Column>(query, new { TableName = tableName });
-
-                return new TableDefinition { Columns = columns.ToList() };
+                    return new TableDefinition { Columns = columns.ToList() };
+                }
             }
             catch (SqlException sqlex)
             {
@@ -68,28 +79,39 @@ namespace importacionmasiva.api.net.Repositories
 
         public async Task CreateTable(DataTable dataTable, string tableName, string registryName)
         {
-            try 
-            {
-                var columnDefinitions = new List<string>();
+            if (dataTable == null)
+                throw new ArgumentNullException(nameof(dataTable));
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(registryName))
+                throw new ArgumentException("El nombre del registro no puede estar vacío.", nameof(registryName));
 
-                foreach (DataColumn column in dataTable.Columns)
-                {
-                    columnDefinitions.Add($"[{column.ColumnName}] NVARCHAR(MAX)");
-                }
+            try
+            {
+                var columnDefinitions = dataTable.Columns
+                    .Cast<DataColumn>()
+                    .Select(column => $"[{column.ColumnName}] NVARCHAR(MAX)")
+                    .ToArray();
 
                 string columns = string.Join(", ", columnDefinitions);
                 string createTableQuery = $"CREATE TABLE [{tableName}] ({columns})";
 
-                using var dbContext = new DbContext(_connectionFactory, registryName);
-                using var connection = _connectionFactory.CreateConnection(registryName);
-                await connection.ExecuteAsync(createTableQuery);
+                using (var connection = _connectionFactory.CreateConnection(registryName))
+                {
+                    await connection.ExecuteAsync(createTableQuery);
+                }
             }
             catch (SqlException sqlex)
             {
-                if (sqlex.Number == 220)
-                    throw new CustomException(422, "Revisá los códigos ingresados, el valor numérico no debe superar 255", sqlex);
-
-                throw new CustomException(sqlex.State.ToString() == "105" ? 404 : 500, sqlex.Message, sqlex);
+                switch (sqlex.Number)
+                {
+                    case 220:
+                        throw new CustomException(422, "Revisá los códigos ingresados, el valor numérico no debe superar 255", sqlex);
+                    case 105:
+                        throw new CustomException(404, sqlex.Message, sqlex);
+                    default:
+                        throw new CustomException(500, sqlex.Message, sqlex);
+                }
             }
             catch (Exception ex)
             {
@@ -99,35 +121,45 @@ namespace importacionmasiva.api.net.Repositories
 
         public async Task BulkInsert(DataTable dataTable, string tableName, string registryName)
         {
-            try 
+            if (dataTable == null)
+                throw new ArgumentNullException(nameof(dataTable));
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(registryName))
+                throw new ArgumentException("El nombre del registro no puede estar vacío.", nameof(registryName));
+
+            try
             {
-                using var dbContext = new DbContext(_connectionFactory, registryName);
-                using var connection = (SqlConnection)_connectionFactory.CreateConnection(registryName);
-
-                connection.Open();
-
-                using var bulkCopy = new SqlBulkCopy(connection)
+                using (var connection = (SqlConnection)_connectionFactory.CreateConnection(registryName))
                 {
-                    DestinationTableName = tableName,
-                    BatchSize = 100000,
-                    BulkCopyTimeout = 600
-                };
+                    await connection.OpenAsync();
 
-                foreach (DataColumn column in dataTable.Columns)
-                {
-                    bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+                    using (var bulkCopy = new SqlBulkCopy(connection))
+                    {
+                        bulkCopy.DestinationTableName = tableName;
+                        bulkCopy.BatchSize = 100000;
+                        bulkCopy.BulkCopyTimeout = 600;
+
+                        foreach (DataColumn column in dataTable.Columns)
+                        {
+                            bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+                        }
+
+                        await bulkCopy.WriteToServerAsync(dataTable);
+                    }
                 }
-
-                await bulkCopy.WriteToServerAsync(dataTable);
-
-                connection.Close();
             }
             catch (SqlException sqlex)
             {
-                if (sqlex.Number == 220)
-                    throw new CustomException(422, "Revisá los códigos ingresados, el valor numérico no debe superar 255", sqlex);
-
-                throw new CustomException(sqlex.State.ToString() == "105" ? 404 : 500, sqlex.Message, sqlex);
+                switch (sqlex.Number)
+                {
+                    case 220:
+                        throw new CustomException(422, "Revisá los códigos ingresados, el valor numérico no debe superar 255", sqlex);
+                    case 105:
+                        throw new CustomException(404, sqlex.Message, sqlex);
+                    default:
+                        throw new CustomException(500, sqlex.Message, sqlex);
+                }
             }
             catch (Exception ex)
             {
@@ -137,17 +169,23 @@ namespace importacionmasiva.api.net.Repositories
 
         public async Task DeleteRecords(string tableName, string registryName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(registryName))
+                throw new ArgumentException("El nombre del registro no puede estar vacío.", nameof(registryName));
+
             try
             {
-                string truncateQuery = $"DELETE FROM {tableName}";
+                string deleteQuery = $"DELETE FROM {tableName}";
 
-                using var dbContext = new DbContext(_connectionFactory, registryName);
-                using var connection = _connectionFactory.CreateConnection(registryName);
-                await connection.ExecuteAsync(truncateQuery);
+                using (var connection = _connectionFactory.CreateConnection(registryName))
+                {
+                    await connection.ExecuteAsync(deleteQuery);
+                }
             }
             catch (SqlException sqlex)
             {
-                if (sqlex.Number == 4712) 
+                if (sqlex.Number == 4712)
                     throw new CustomException(422, "No se puede truncar la tabla porque tiene restricciones de clave foránea.", sqlex);
 
                 throw new CustomException(sqlex.State.ToString() == "105" ? 404 : 500, sqlex.Message, sqlex);
@@ -160,17 +198,23 @@ namespace importacionmasiva.api.net.Repositories
 
         public async Task TruncateTable(string tableName, string registryName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(registryName))
+                throw new ArgumentException("El nombre del registro no puede estar vacío.", nameof(registryName));
+
             try
             {
                 string truncateQuery = $"TRUNCATE TABLE {tableName}";
 
-                using var dbContext = new DbContext(_connectionFactory, registryName);
-                using var connection = _connectionFactory.CreateConnection(registryName);
-                await connection.ExecuteAsync(truncateQuery);
+                using (var connection = _connectionFactory.CreateConnection(registryName))
+                {
+                    await connection.ExecuteAsync(truncateQuery);
+                }
             }
             catch (SqlException sqlex)
             {
-                if (sqlex.Number == 4712) 
+                if (sqlex.Number == 4712)
                     throw new CustomException(422, "No se puede truncar la tabla porque tiene restricciones de clave foránea.", sqlex);
 
                 throw new CustomException(sqlex.State.ToString() == "105" ? 404 : 500, sqlex.Message, sqlex);
