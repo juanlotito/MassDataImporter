@@ -1,9 +1,13 @@
 ﻿using importacionmasiva.api.net.DataBase;
 using importacionmasiva.api.net.Filters;
+using importacionmasiva.api.net.Helpers;
 using importacionmasiva.api.net.Repositories;
 using importacionmasiva.api.net.Repositories.Interface;
 using importacionmasiva.api.net.Services;
 using importacionmasiva.api.net.Services.Interface;
+using importacionmasiva.api.net.Utils.Csv;
+using importacionmasiva.api.net.Utils.Excel;
+using importacionmasiva.api.net.Utils.Txt;
 
 namespace importacionmasiva.api.net.IoC
 {
@@ -31,6 +35,14 @@ namespace importacionmasiva.api.net.IoC
             // Services
             services.AddScoped<IAutenticacionService, AutenticacionService>();
             services.AddScoped<IImportacionService, ImportacionService>();
+
+            // Utils
+            services.AddScoped<IExcelUtils, ExcelUtils>();
+            services.AddScoped<ICsvUtils, CsvUtils>();
+            services.AddScoped<ITxtUtils, TxtUtils>();
+
+            //Validators
+            services.AddScoped<TableValidator>();
 
             return services;
         }
