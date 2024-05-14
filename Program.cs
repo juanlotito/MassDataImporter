@@ -59,8 +59,8 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 // Configurar los límites de tamaño de la carga para las solicitudes
 builder.Services.Configure<FormOptions>(x =>
 {
-    x.ValueLengthLimit = int.MaxValue; 
-    x.MultipartBodyLengthLimit = int.MaxValue; 
+    x.ValueLengthLimit = int.MaxValue;
+    x.MultipartBodyLengthLimit = int.MaxValue;
     x.MemoryBufferThreshold = Int32.MaxValue;
 });
 
