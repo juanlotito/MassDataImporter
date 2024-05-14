@@ -29,12 +29,14 @@ namespace importacionmasiva.api.net.IoC
             services.AddScoped<DecodeHeader>();
 
             // Repositories
-            services.AddScoped<IHttpClienteRepositories, HttpClienteRepositories>();
-            services.AddScoped<IImportacionRepositories, ImportacionRepository>();
+            services.AddScoped<IHttpClienteRepository, HttpClienteRepository>();
+            services.AddScoped<IImportacionRepository, ImportacionRepository>();
+            services.AddScoped<IImportacionLogsRepository, ImportacionLogsRepository>();
 
             // Services
             services.AddScoped<IAutenticacionService, AutenticacionService>();
             services.AddScoped<IImportacionService, ImportacionService>();
+            services.AddScoped<IImportacionLogsService, ImportacionLogService>();
 
             // Utils
             services.AddScoped<IExcelUtils, ExcelUtils>();
