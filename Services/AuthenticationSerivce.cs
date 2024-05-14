@@ -6,9 +6,9 @@ namespace importacionmasiva.api.net.Services
 {
     public class AutenticacionService : IAutenticacionService
     {
-        private readonly IHttpClienteRepositories _IHttpClienteRepositories;
+        private readonly IHttpClienteRepository _IHttpClienteRepositories;
 
-        public AutenticacionService(IHttpClienteRepositories _IHttpClienteRepositories)
+        public AutenticacionService(IHttpClienteRepository _IHttpClienteRepositories)
         {
             this._IHttpClienteRepositories = _IHttpClienteRepositories;
         }

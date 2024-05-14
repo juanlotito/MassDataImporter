@@ -8,7 +8,7 @@ using System.Data.SqlClient;
 
 namespace importacionmasiva.api.net.Repositories
 {
-    public class ImportacionRepository : BaseRepository, IImportacionRepositories
+    public class ImportacionRepository : BaseRepository, IImportacionRepository
     {
         private readonly IDbConnectionFactory _connectionFactory;
 
