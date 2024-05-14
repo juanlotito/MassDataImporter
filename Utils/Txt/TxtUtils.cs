@@ -2,7 +2,7 @@
 
 namespace importacionmasiva.api.net.Utils.Txt
 {
-    public class TxtUtils
+    public class TxtUtils : ITxtUtils
     {
         public DataTable ReadTxtToDataTable(IFormFile file)
         {

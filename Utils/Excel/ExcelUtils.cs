@@ -3,7 +3,7 @@ using System.Data;
 
 namespace importacionmasiva.api.net.Utils.Excel
 {
-    public class ExcelUtils
+    public class ExcelUtils : IExcelUtils
     {
         public DataTable ReadExcelToDataTable(IFormFile file)
         {
