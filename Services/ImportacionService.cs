@@ -30,8 +30,11 @@ namespace importacionmasiva.api.net.Services
                     if (deleteAction == DeleteAction.Delete)
                         await _importacionRepositories.DeleteRecords(tableName, registryName);
 
-                    else if (deleteAction == DeleteAction.Truncate)
-                        await _importacionRepositories.TruncateTable(tableName, registryName);
+        public async Task ImportFromCsv(IFormFile dataset, string registryName, string tableName, DeleteAction deleteAction = DeleteAction.None)
+        {
+            DataTable dataTable = _csvUtils.ReadCsvToDataTable(dataset);
+            await ImportData(dataTable, registryName, tableName, deleteAction);
+        }
 
                     var tableDefinition = await _importacionRepositories.GetTableDefinition(tableName, registryName);
 
